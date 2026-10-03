@@ -1,0 +1,194 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71bee2c2d0971a5489845ea098c918c2, type: 3}
+  m_Name: OccaVillageTownArtSet
+  m_EditorClassIdentifier: Assembly-CSharp::Wispmere.TownArtSet
+  entries:
+  - key: building/inn
+    prefab: {fileID: 265591253760320404, guid: 17baadd2d44e62d4e8a91e885ce4144e, type: 3}
+    scale: 0.3
+  - key: building/hall
+    prefab: {fileID: 8233636598383507252, guid: d4e0f7e6af5fde041b562e69c8777fe6, type: 3}
+    scale: 0.3
+  - key: building/shop
+    prefab: {fileID: 1216127879520472731, guid: e43b87eec9181834094b5883f6858f76, type: 3}
+    scale: 0.3
+  - key: building/house
+    prefab: {fileID: 265591253760320404, guid: 17baadd2d44e62d4e8a91e885ce4144e, type: 3}
+    scale: 0.3
+  - key: building/house2
+    prefab: {fileID: 8233636598383507252, guid: d4e0f7e6af5fde041b562e69c8777fe6, type: 3}
+    scale: 0.3
+  - key: building/cottage
+    prefab: {fileID: 1216127879520472731, guid: e43b87eec9181834094b5883f6858f76, type: 3}
+    scale: 0.3
+  - key: building/cottage2
+    prefab: {fileID: 265591253760320404, guid: 17baadd2d44e62d4e8a91e885ce4144e, type: 3}
+    scale: 0.3
+  - key: building/damaged
+    prefab: {fileID: 8233636598383507252, guid: d4e0f7e6af5fde041b562e69c8777fe6, type: 3}
+    scale: 0.3
+  - key: tree/teal
+    prefab: {fileID: 5223627905424994432, guid: dd76da60b484c7c45a2bdc5c0271808f, type: 3}
+    scale: 0.48
+  - key: tree/turquoise
+    prefab: {fileID: 5723091785480246579, guid: 2186aabdeb39ce6449ceb9b0878704b5, type: 3}
+    scale: 0.43
+  - key: node/stone
+    prefab: {fileID: 2380846811372264750, guid: 4363cc5f6c64c954ba6f12cacb2002f9, type: 3}
+    scale: 0.9
+  - key: path/large1
+    prefab: {fileID: 5415845077446116136, guid: 2159f826a7fb5944b8baff7839d55f5b, type: 3}
+    scale: 0.4
+  - key: path/large2
+    prefab: {fileID: 3762573537229557192, guid: 54908593d3b9f614b85d81ea61bee672, type: 3}
+    scale: 0.4
+  - key: path/piece1
+    prefab: {fileID: 6546880557473838952, guid: 2f1bf4cd7a3cdcd4ea279d67496dfee9, type: 3}
+    scale: 1
+  - key: path/piece2
+    prefab: {fileID: 389605447136746597, guid: e3d104e6c8824ca40a20fa0b16308ec4, type: 3}
+    scale: 1
+  - key: path/piece3
+    prefab: {fileID: 1643592626204856529, guid: 939a4fc1efac26f4f8e18ebebacf94e1, type: 3}
+    scale: 1
+  - key: path/piece4
+    prefab: {fileID: 8218222616827989722, guid: 8ea8ed222037d5c43947916767330d3d, type: 3}
+    scale: 1
+  - key: path/piece5
+    prefab: {fileID: 8958562254014563, guid: d2067771ddca27f4492d2ac7e25569fd, type: 3}
+    scale: 1
+  - key: path/piece6
+    prefab: {fileID: 2352038077393176724, guid: ee437bdf92d86ca4897ba11ca9b0a902, type: 3}
+    scale: 1
+  - key: path/piece7
+    prefab: {fileID: 4681722338604880183, guid: d29bb6c6b354875488667cc20a2817df, type: 3}
+    scale: 1
+  - key: path/piece8
+    prefab: {fileID: 7008442046727480758, guid: 923c9ec6e1b12a64f9d29d8830b158aa, type: 3}
+    scale: 1
+  - key: path/piece9
+    prefab: {fileID: 7104049563911181740, guid: d024553abb470894fbf7d0ca078f50e6, type: 3}
+    scale: 1
+  - key: path/piece10
+    prefab: {fileID: 6043253374779549551, guid: bde74c49e0100d046a0dd7f45b3c07ca, type: 3}
+    scale: 1
+  - key: path/piece11
+    prefab: {fileID: 8721526011478592153, guid: da4e44539ce2b46479c43db56633d9cd, type: 3}
+    scale: 1
+  - key: path/piece12
+    prefab: {fileID: 6320028100016694135, guid: 153f3075a51f5974d9809c5d794d6ce1, type: 3}
+    scale: 1
+  - key: path/piece13
+    prefab: {fileID: 280145511465356680, guid: 4c3e0f7adcd3238409f9f7f317b263a1, type: 3}
+    scale: 1
+  - key: path/piece14
+    prefab: {fileID: 4774944463348679777, guid: ff9484291d45f334ea3494be35725dd7, type: 3}
+    scale: 1
+  - key: path/piece15
+    prefab: {fileID: 8077727893790505727, guid: a51f37d5088ba9f4b9ccd33aeb0e280a, type: 3}
+    scale: 1
+  - key: path/piece16
+    prefab: {fileID: 6253780260547304282, guid: f44ca4be62ad14344bdc20781a8d333c, type: 3}
+    scale: 1
+  - key: decoration/tree1
+    prefab: {fileID: 5223627905424994432, guid: dd76da60b484c7c45a2bdc5c0271808f, type: 3}
+    scale: 0.48
+  - key: decoration/tree2
+    prefab: {fileID: 1998616913923603544, guid: f2c96353dc943e34bb0245e8155922fa, type: 3}
+    scale: 0.48
+  - key: decoration/tree3
+    prefab: {fileID: 548943364942729339, guid: 705b5aa8b3cca7b4b856850fa92e2270, type: 3}
+    scale: 0.43
+  - key: decoration/tree4
+    prefab: {fileID: 4031753574151610889, guid: 53b8853b27b8eb54e96ce5b072c47164, type: 3}
+    scale: 0.43
+  - key: decoration/tree5
+    prefab: {fileID: 5723091785480246579, guid: 2186aabdeb39ce6449ceb9b0878704b5, type: 3}
+    scale: 0.43
+  - key: decoration/tree6
+    prefab: {fileID: 2638607709940817045, guid: 4b6c823c8250950458397687732387d5, type: 3}
+    scale: 0.48
+  - key: decoration/tree7
+    prefab: {fileID: 1811602082504828536, guid: 9c5f0d011cbb74f46a3eca1a97c7a485, type: 3}
+    scale: 0.48
+  - key: decoration/tree8
+    prefab: {fileID: 1863068996201187659, guid: dfe0ded46da2be248833f5a0eb632767, type: 3}
+    scale: 0.43
+  - key: decoration/pine1
+    prefab: {fileID: 6208551969367241003, guid: f30a358b7336975468ee7d12a0aa30c7, type: 3}
+    scale: 0.45
+  - key: decoration/pine2
+    prefab: {fileID: 4751892824378312366, guid: b494815f7682f6e4db2ff5cd616e1717, type: 3}
+    scale: 0.45
+  - key: decoration/pine3
+    prefab: {fileID: 1248564959300070555, guid: 6df0c32e24342b845b0ca643604fe0ef, type: 3}
+    scale: 0.45
+  - key: decoration/pine4
+    prefab: {fileID: 5610412344464807517, guid: e735c04079cd2ec41a27bac1b848bfc0, type: 3}
+    scale: 0.45
+  - key: decoration/pine5
+    prefab: {fileID: 1760923041891628936, guid: 9a08f387c56d2e44aa12051243374461, type: 3}
+    scale: 0.45
+  - key: decoration/rock1
+    prefab: {fileID: 465510044919914276, guid: ba9fd98bca0027247a64ce4e19eef4f8, type: 3}
+    scale: 1
+  - key: decoration/rock2
+    prefab: {fileID: 2380846811372264750, guid: 4363cc5f6c64c954ba6f12cacb2002f9, type: 3}
+    scale: 1
+  - key: decoration/rock3
+    prefab: {fileID: 8208134182140680753, guid: 56b09d1d274377d4e90681b48d25c7a6, type: 3}
+    scale: 1
+  - key: decoration/rock4
+    prefab: {fileID: 1528464401552908886, guid: 7ee2debd6ad2dd2498222dd51ab640c2, type: 3}
+    scale: 1
+  - key: decoration/flower1
+    prefab: {fileID: 6284870284092300780, guid: 454c2db2cdbf1b6458ec9b7174b5cc1e, type: 3}
+    scale: 0.45
+  - key: decoration/flower2
+    prefab: {fileID: 4399184098321190726, guid: 58777b70911a0084593f6197c89476aa, type: 3}
+    scale: 0.45
+  - key: decoration/flower3
+    prefab: {fileID: 2126758486473033836, guid: 875a520d510886043836c1da07874b53, type: 3}
+    scale: 0.45
+  - key: decoration/flower4
+    prefab: {fileID: 570301956381461569, guid: 466b9e1bb6210f94bbdd141eb97e3c8d, type: 3}
+    scale: 0.45
+  - key: decoration/flower5
+    prefab: {fileID: 120567254519065965, guid: ac9e976c13c875648856e6486297ee60, type: 3}
+    scale: 0.45
+  - key: decoration/fence
+    prefab: {fileID: 1332560038659159606, guid: 94f6b81a91774dd40b60e935197c3144, type: 3}
+    scale: 0.55
+  - key: decoration/bench
+    prefab: {fileID: 5700205785125025109, guid: ee743d366a1d15f4280fcc33f72891e5, type: 3}
+    scale: 0.7
+  - key: decoration/lantern
+    prefab: {fileID: 7189047328722756852, guid: cfd9e31c880414441aa66f70b40e16db, type: 3}
+    scale: 0.55
+  - key: decoration/crate
+    prefab: {fileID: 7785324583566468165, guid: 4e08fdf4080c15941b2b10e6aac7bfa6, type: 3}
+    scale: 0.45
+  - key: decoration/flower-pot
+    prefab: {fileID: 179969503972620271, guid: bf1a024e76f38f84cb744d8e9f56b7ab, type: 3}
+    scale: 0.55
+  - key: decoration/bridge
+    prefab: {fileID: 6141891356066675564, guid: d20f7c791b6c5ca459c45f167993e50d, type: 3}
+    scale: 0.65
+  - key: decoration/boat
+    prefab: {fileID: 5777240715420095136, guid: 7c99531c61bfcb649a63fecaa465073c, type: 3}
+    scale: 0.65
+  materialReplacements:
+  - source: {fileID: 2100000, guid: 11783c05facd0c149ad53d328816c467, type: 2}
+    replacement: {fileID: 2100000, guid: 5b8933e9d5afea0498fbcb0a65de3d22, type: 2}
+  - source: {fileID: 2100000, guid: 99e448bcb4ca7fc4d9e9e20d6abe2cd5, type: 2}
+    replacement: {fileID: 2100000, guid: 7f666cea87dec044488fb1dcf7a7ea92, type: 2}
