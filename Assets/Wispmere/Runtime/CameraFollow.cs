@@ -5,9 +5,8 @@ using UnityEngine.InputSystem;
 namespace Wispmere
 {
     /// <summary>
-    /// Elevated action-RPG follow camera. The camera keeps a stable world
-    /// bearing so camera-relative movement remains predictable; the arrival
-    /// reveal smoothly pulls back and rises above the square.
+    /// Smooth elevated third-person gameplay camera with the previous elevated
+    /// camera retained as an optional fallback.
     /// </summary>
     public class CameraFollow : MonoBehaviour
     {
@@ -38,20 +37,60 @@ namespace Wispmere
         public float positionSmoothTime = 0.28f;
         public float lookAheadDistance = 0.3f;
 
+        [Header("Third-Person Gameplay Camera")]
+        public bool thirdPersonCameraEnabled = true;
+        public float thirdPersonDistance = 9.5f;
+        public float thirdPersonMinimumDistance = 7f;
+        public float thirdPersonMaximumDistance = 16f;
+        [Range(8f, 35f)] public float thirdPersonPitch = 23f;
+        public float thirdPersonYaw;
+        public float thirdPersonPositionSmoothTime = 0.32f;
+        public float thirdPersonYawSmoothTime = 0.24f;
+        public float thirdPersonPitchSmoothTime = 0.2f;
+        public float thirdPersonRotationSharpness = 6f;
+        public float thirdPersonZoomSmoothTime = 0.24f;
+        public float thirdPersonOrbitSensitivity = 0.16f;
+        public float thirdPersonGamepadOrbitSpeed = 120f;
+        public float thirdPersonShoulderOffset = 0.35f;
+        public float thirdPersonFocusHeight = 1.4f;
+        public float thirdPersonLookAheadDistance = 0.45f;
+        public float thirdPersonFieldOfView = 60f;
+        public float thirdPersonZoomSensitivity = 0.9f;
+
         private bool _revealing;
         private Vector3 _positionVelocity;
         private bool _initialized;
         private float _targetZoom;
         private float _zoomVelocity;
+        private float _thirdPersonTargetDistance;
+        private float _thirdPersonZoomVelocity;
+        private float _thirdPersonTargetYaw;
+        private float _thirdPersonBaseYaw;
+        private float _thirdPersonFollowYaw;
+        private float _thirdPersonYawVelocity;
+        private float _thirdPersonFollowPitch;
+        private float _thirdPersonPitchVelocity;
+        private float _originalFieldOfView;
+        private bool _thirdPersonModeApplied;
+        private bool _hasAppliedThirdPersonMode;
+        private Camera _camera;
+        private InputAction _gamepadLookAction;
         private readonly RaycastHit[] _obstructionHits = new RaycastHit[32];
         private Vector3 _lastObstructionDirection;
         private bool _hasLastObstructionDirection;
 
-        public float TargetZoomDistance { get { return _targetZoom; } }
+        public float TargetZoomDistance
+        {
+            get { return thirdPersonCameraEnabled ? _thirdPersonTargetDistance : _targetZoom; }
+        }
 
         private void Awake()
         {
             _targetZoom = Mathf.Clamp(zoomDistance, minimumZoom, maximumZoom);
+            _thirdPersonTargetDistance = Mathf.Clamp(thirdPersonDistance,
+                thirdPersonMinimumDistance, thirdPersonMaximumDistance);
+            _camera = GetComponent<Camera>();
+            if (target != null) _thirdPersonBaseYaw = target.eulerAngles.y;
         }
 
         public void SetReveal(bool on)
@@ -59,9 +98,30 @@ namespace Wispmere
             _revealing = on;
         }
 
+        public void SetThirdPersonCamera(bool enabled)
+        {
+            thirdPersonCameraEnabled = enabled;
+        }
+
         public void SnapToTarget()
         {
             if (target == null) return;
+            ApplyThirdPersonModeIfChanged();
+            if (thirdPersonCameraEnabled)
+            {
+                Vector3 thirdPersonFocus = GetThirdPersonFocus();
+                _thirdPersonTargetYaw = _thirdPersonBaseYaw + thirdPersonYaw;
+                _thirdPersonFollowYaw = _thirdPersonTargetYaw;
+                _thirdPersonFollowPitch = thirdPersonPitch;
+                transform.position = ResolveObstruction(thirdPersonFocus,
+                    GetThirdPersonCameraPosition(thirdPersonFocus, thirdPersonDistance, _thirdPersonFollowYaw,
+                        _thirdPersonFollowPitch));
+                transform.rotation = Quaternion.LookRotation(thirdPersonFocus - transform.position, Vector3.up);
+                _positionVelocity = Vector3.zero;
+                _initialized = true;
+                return;
+            }
+
             Vector3 focus = GetFocus();
             Vector3 offset = usePolishedControls ? GetPolishedOffset() : playOffset;
             transform.position = ResolveObstruction(focus, target.position + offset);
@@ -76,6 +136,38 @@ namespace Wispmere
             {
                 Debug.LogError("[Wispmere] CameraFollow needs its target assigned.", this);
                 enabled = false;
+                return;
+            }
+
+            ApplyThirdPersonModeIfChanged();
+            if (thirdPersonCameraEnabled)
+            {
+                Vector3 thirdPersonFocus = GetThirdPersonFocus();
+                float distance = Mathf.SmoothDamp(thirdPersonDistance, _thirdPersonTargetDistance,
+                    ref _thirdPersonZoomVelocity, thirdPersonZoomSmoothTime);
+                _thirdPersonTargetYaw = _thirdPersonBaseYaw + thirdPersonYaw;
+                _thirdPersonFollowYaw = Mathf.SmoothDampAngle(_thirdPersonFollowYaw,
+                    _thirdPersonTargetYaw, ref _thirdPersonYawVelocity, thirdPersonYawSmoothTime);
+                _thirdPersonFollowPitch = Mathf.SmoothDamp(_thirdPersonFollowPitch,
+                    thirdPersonPitch, ref _thirdPersonPitchVelocity, thirdPersonPitchSmoothTime);
+                Vector3 thirdPersonGoal = ResolveObstruction(thirdPersonFocus,
+                    GetThirdPersonCameraPosition(thirdPersonFocus, distance, _thirdPersonFollowYaw,
+                        _thirdPersonFollowPitch));
+                if (!_initialized)
+                {
+                    transform.position = thirdPersonGoal;
+                    _initialized = true;
+                }
+                else
+                {
+                    transform.position = Vector3.SmoothDamp(transform.position, thirdPersonGoal,
+                        ref _positionVelocity, Mathf.Max(0.01f, thirdPersonPositionSmoothTime));
+                }
+
+                Quaternion rotation = Quaternion.LookRotation(thirdPersonFocus - transform.position, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, rotation,
+                    1f - Mathf.Exp(-Mathf.Max(0.01f, thirdPersonRotationSharpness) * Time.deltaTime));
+                thirdPersonDistance = distance;
                 return;
             }
 
@@ -125,27 +217,122 @@ namespace Wispmere
 
         private void Update()
         {
-            if (!usePolishedControls) return;
-            Mouse mouse = Mouse.current;
-            if (mouse == null || PointerOverUI()) return;
+            if (!usePolishedControls && !thirdPersonCameraEnabled) return;
+            GameManager manager = GameManager.Instance;
+            bool acceptLookInput = manager == null || manager.CanControlCamera;
+            if (_gamepadLookAction == null && target != null)
+            {
+                PlayerController playerController = target.GetComponent<PlayerController>();
+                if (playerController != null) _gamepadLookAction = playerController.CameraLookAction;
+            }
+            if (acceptLookInput && _gamepadLookAction != null && _gamepadLookAction.enabled)
+                AdjustGamepadOrbit(_gamepadLookAction.ReadValue<Vector2>(), Time.deltaTime);
 
-            if (mouse.middleButton.isPressed)
+            Mouse mouse = Mouse.current;
+            if (!acceptLookInput || mouse == null || PointerOverUI()) return;
+
+            if (!thirdPersonCameraEnabled && mouse.middleButton.isPressed)
                 AdjustOrbit(mouse.delta.ReadValue());
             float wheel = mouse.scroll.ReadValue().y;
             AdjustZoom(wheel);
         }
 
+        public void AdjustGamepadOrbit(Vector2 input, float deltaTime)
+        {
+            if (input.sqrMagnitude <= 0.0001f || deltaTime <= 0f) return;
+            Vector2 delta = input * thirdPersonGamepadOrbitSpeed * deltaTime;
+            if (thirdPersonCameraEnabled)
+            {
+                thirdPersonYaw += delta.x;
+                thirdPersonPitch = Mathf.Clamp(thirdPersonPitch - delta.y, 8f, 35f);
+            }
+            else
+            {
+                yaw += delta.x;
+                pitch = Mathf.Clamp(pitch - delta.y, 35f, 50f);
+            }
+        }
+
         public void AdjustOrbit(Vector2 delta)
         {
-            yaw += delta.x * orbitSensitivity;
-            pitch = Mathf.Clamp(pitch - delta.y * orbitSensitivity, 35f, 50f);
+            if (thirdPersonCameraEnabled)
+            {
+                thirdPersonYaw += delta.x * thirdPersonOrbitSensitivity;
+                thirdPersonPitch = Mathf.Clamp(thirdPersonPitch - delta.y * thirdPersonOrbitSensitivity, 8f, 35f);
+            }
+            else
+            {
+                yaw += delta.x * orbitSensitivity;
+                pitch = Mathf.Clamp(pitch - delta.y * orbitSensitivity, 35f, 50f);
+            }
         }
 
         public void AdjustZoom(float scrollDelta)
         {
             if (Mathf.Abs(scrollDelta) <= 0.01f) return;
+            if (thirdPersonCameraEnabled)
+            {
+                _thirdPersonTargetDistance = Mathf.Clamp(
+                    _thirdPersonTargetDistance - scrollDelta * thirdPersonZoomSensitivity * 0.01f,
+                    thirdPersonMinimumDistance, thirdPersonMaximumDistance);
+                return;
+            }
+
             _targetZoom = Mathf.Clamp(_targetZoom - scrollDelta * zoomSensitivity * 0.01f,
                 minimumZoom, maximumZoom);
+        }
+
+        private void ApplyThirdPersonModeIfChanged()
+        {
+            if (_hasAppliedThirdPersonMode && _thirdPersonModeApplied == thirdPersonCameraEnabled) return;
+
+            if (_camera != null)
+            {
+                if (thirdPersonCameraEnabled)
+                {
+                    _originalFieldOfView = _camera.fieldOfView;
+                    _camera.fieldOfView = thirdPersonFieldOfView;
+                }
+                else if (_hasAppliedThirdPersonMode && _thirdPersonModeApplied)
+                {
+                    _camera.fieldOfView = _originalFieldOfView;
+                }
+            }
+
+            _thirdPersonModeApplied = thirdPersonCameraEnabled;
+            _hasAppliedThirdPersonMode = true;
+            if (thirdPersonCameraEnabled)
+            {
+                _thirdPersonTargetDistance = Mathf.Clamp(thirdPersonDistance,
+                    thirdPersonMinimumDistance, thirdPersonMaximumDistance);
+                _thirdPersonTargetYaw = _thirdPersonBaseYaw + thirdPersonYaw;
+                _thirdPersonFollowYaw = _thirdPersonTargetYaw;
+                _thirdPersonYawVelocity = 0f;
+                _thirdPersonFollowPitch = thirdPersonPitch;
+                _thirdPersonPitchVelocity = 0f;
+                _hasLastObstructionDirection = false;
+            }
+            _positionVelocity = Vector3.zero;
+        }
+
+        private Vector3 GetThirdPersonFocus()
+        {
+            Vector3 cameraForward = Quaternion.Euler(0f, _thirdPersonBaseYaw + thirdPersonYaw, 0f)
+                * Vector3.forward;
+            return target.position + cameraForward * thirdPersonLookAheadDistance
+                + Vector3.up * thirdPersonFocusHeight;
+        }
+
+        private Vector3 GetThirdPersonCameraPosition(Vector3 focus, float distance, float followYaw,
+            float followPitch)
+        {
+            Quaternion orbit = Quaternion.Euler(0f, followYaw, 0f);
+            Vector3 behind = orbit * Vector3.back;
+            Vector3 right = orbit * Vector3.right;
+            float horizontalDistance = Mathf.Cos(followPitch * Mathf.Deg2Rad) * distance;
+            float verticalDistance = Mathf.Sin(followPitch * Mathf.Deg2Rad) * distance;
+            return focus + behind * horizontalDistance + right * thirdPersonShoulderOffset
+                + Vector3.up * verticalDistance;
         }
 
         private static bool PointerOverUI()

@@ -11,6 +11,8 @@ namespace Wispmere.Editor
     {
         private const string ArtSetPath = "Assets/Wispmere/Art/OccaVillageTownArtSet.asset";
         private const string PrefabFolder = "Assets/OccaSoftware/Low Poly Fantasy Village/Prefabs/";
+        private const string FantasyTownPrefabFolder = "Assets/FantasyEnvironments/Environments/Town/Prefabs/";
+        private const string FantasyNaturePrefabFolder = "Assets/FantasyEnvironments/Environments/Prefabs/";
         private const string SourceMaterialFolder = "Assets/OccaSoftware/Low Poly Fantasy Village/Materials/";
         private const string PaletteTexturePath = "Assets/OccaSoftware/Low Poly Fantasy Village/Textures/Gradient.png";
         private const string CompatibleMaterialFolder = "Assets/Wispmere/Art/Materials";
@@ -19,12 +21,22 @@ namespace Wispmere.Editor
         {
             public string key;
             public string prefab;
+            public string folder;
             public float scale;
 
             public Mapping(string key, string prefab, float scale)
             {
                 this.key = key;
                 this.prefab = prefab;
+                this.folder = PrefabFolder;
+                this.scale = scale;
+            }
+
+            public Mapping(string key, string prefab, float scale, string folder)
+            {
+                this.key = key;
+                this.prefab = prefab;
+                this.folder = folder;
                 this.scale = scale;
             }
         }
@@ -90,7 +102,7 @@ namespace Wispmere.Editor
             var entries = new List<TownArtSet.PrefabEntry>();
             foreach (Mapping mapping in Mappings())
             {
-                string path = PrefabFolder + mapping.prefab + ".prefab";
+                string path = mapping.folder + mapping.prefab + ".prefab";
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (prefab == null)
                 {
@@ -183,6 +195,39 @@ namespace Wispmere.Editor
             yield return new Mapping("decoration/flower-pot", "Flower Pot", 0.55f);
             yield return new Mapping("decoration/bridge", "Bridge", 0.65f);
             yield return new Mapping("decoration/boat", "Boat", 0.65f);
+
+            yield return new Mapping("decoration/windmill", "Windmill", 0.18f, FantasyTownPrefabFolder);
+            yield return new Mapping("decoration/cart", "cart1", 0.4f, FantasyTownPrefabFolder);
+            yield return new Mapping("decoration/work-barrel", "storage_barrel", 0.65f, FantasyTownPrefabFolder);
+            yield return new Mapping("decoration/work-basket", "storage_basket", 0.65f, FantasyTownPrefabFolder);
+            yield return new Mapping("decoration/meadow-grass", "Grass1", 0.28f, FantasyNaturePrefabFolder);
+            yield return new Mapping("decoration/meadow-fern", "Fern1", 0.3f, FantasyNaturePrefabFolder);
+            yield return new Mapping("decoration/meadow-flower", "Flower1", 0.3f, FantasyNaturePrefabFolder);
+
+            yield return new Mapping("fantasy/tree-birch-1", "Birch_tree1", 0.22f, "Assets/FantasyEnvironments/Environments/Ambient-Occlusion-Trees/Prefabs/");
+            yield return new Mapping("fantasy/tree-birch-2", "Birch_tree2", 0.22f, "Assets/FantasyEnvironments/Environments/Ambient-Occlusion-Trees/Prefabs/");
+            yield return new Mapping("fantasy/tree-oak-2", "Oak_tree2", 0.22f, "Assets/FantasyEnvironments/Environments/Ambient-Occlusion-Trees/Prefabs/");
+            yield return new Mapping("fantasy/tree-deciduous-3", "Deciduous_tree3", 0.22f, "Assets/FantasyEnvironments/Environments/Ambient-Occlusion-Trees/Prefabs/");
+            yield return new Mapping("fantasy/tree-willow-1", "Willow_tree1", 0.25f, "Assets/FantasyEnvironments/Environments/Ambient-Occlusion-Trees/Prefabs/");
+            yield return new Mapping("fantasy/tree-pine-2", "Pine_tree2", 0.24f, "Assets/FantasyEnvironments/Environments/Ambient-Occlusion-Trees/Prefabs/");
+            yield return new Mapping("fantasy/grass-1", "Grass1", 0.52f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/grass-2", "Grass2", 0.52f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/grass-3", "Grass3", 0.52f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/grass-4", "Grass4", 0.52f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/fern-1", "Fern1", 0.45f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/fern-2", "Fern2", 0.45f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/fern-3", "Fern3", 0.45f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/flower-2", "Flower2", 0.4f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/flower-3", "Flower3", 0.4f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/flower-5", "Flower5", 0.4f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/flower-6", "Flower6", 0.4f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/flower-8", "Flower8", 0.4f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/plant-2", "Plant2", 0.36f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/plant-4", "Plant4", 0.36f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/bush-1", "Bush1", 0.36f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/rock-1", "Rock1", 0.7f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/rock-2", "Rock2", 0.02f, FantasyNaturePrefabFolder);
+            yield return new Mapping("fantasy/rock-3", "Rock3", 0.7f, FantasyNaturePrefabFolder);
         }
 
         private static void EnsureFolder(string path)

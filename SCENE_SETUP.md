@@ -8,14 +8,21 @@ the editor if Unity prompts you.
 The project includes a wired, playable starter scene at
 `Assets/Wispmere/Scenes/Wispmere.unity`, already enabled in Build Settings.
 Open that scene and press Play. Complete the arrival dialogue, then follow the
-old footpaths to explore. Use **WASD** or click open ground to move; click a
-resource or interactable to approach it and interact automatically. **E**
-remains available as a nearby-interaction fallback. Middle-mouse drag rotates
-the gameplay camera and the wheel zooms within a controlled range. Gather
-marked trees or fallen timber for wood, loose stones for stone, and overgrown
-plants for fiber, then click the unfinished
-**Old Workshop** beside the east path to learn what materials it needs. This
-slice does not yet repair the workshop.
+old footpaths to explore. The Xbox-compatible controller is the primary
+scheme: use the **left stick** to move, the **right stick** to orbit the
+camera, and approach a resource or interactable before pressing **A**.
+**X** opens inventory, **B** backs out or cancels, and **Start/Menu** pauses.
+WASD, **E**, Escape, **I**, and Tab remain keyboard fallbacks. World mouse
+clicks do not move or interact with the player; middle-mouse drag and the
+scroll wheel remain optional camera controls. Gather marked trees or fallen
+timber for wood, loose stones for stone, and overgrown plants for fiber, then
+approach the unfinished **Old Workshop** beside the east path and press **A**
+to learn what materials it needs. This slice does not yet repair the workshop.
+
+Inventory and crafting controls can be navigated with the D-pad or left stick;
+press **A** to select a slot or activate a recipe. When placing a Workbench or
+Tent, the left stick moves the preview, **A** places it, **B** cancels, and
+**LB/RB** rotate it. The right stick continues to orbit the camera.
 
 The gameplay camera keeps its elevated action-RPG framing around obstacles by
 smoothing toward a nearby side or higher bearing when one has a clearer view.

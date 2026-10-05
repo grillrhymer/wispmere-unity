@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 namespace Wispmere
@@ -16,12 +17,22 @@ namespace Wispmere
         public string label = "Fallen Log";
         public int amount = 1;
         public float regrowSeconds = 24f;
+        public float interactionRadius = 1.7f;
         public GatherTool requiredTool;
+        public string persistenceId;
 
         public bool IsRipe { get; private set; } = true;
+        public long RegrowsAtUtcTicks { get { return IsRipe ? 0L : _regrowsAtUtcTicks; } }
 
+        private long _regrowsAtUtcTicks;
+        private Coroutine _regrowRoutine;
         private void OnEnable() { All.Add(this); }
         private void OnDisable() { All.Remove(this); }
+
+        public string GetPersistenceId()
+        {
+            return string.IsNullOrEmpty(persistenceId) ? gameObject.name : persistenceId;
+        }
 
         public void Interact()
         {
@@ -37,15 +48,33 @@ namespace Wispmere
                 return;
             }
             ResourceManager.Instance.Add(kind, amount);
-            StartCoroutine(RegrowRoutine());
+            BeginRegrow(TimeSpan.FromSeconds(regrowSeconds).Ticks);
+            if (GameManager.Instance != null)
+                GameManager.Instance.SaveGame();
         }
 
-        private IEnumerator RegrowRoutine()
+        public void RestoreDepletion(long regrowsAtUtcTicks)
+        {
+            long remainingTicks = regrowsAtUtcTicks - DateTime.UtcNow.Ticks;
+            if (remainingTicks <= 0L) return;
+            BeginRegrow(remainingTicks);
+        }
+
+        private void BeginRegrow(long remainingTicks)
         {
             IsRipe = false;
+            _regrowsAtUtcTicks = DateTime.UtcNow.Ticks + remainingTicks;
             SetVisuals(false);
-            yield return new WaitForSeconds(regrowSeconds);
+            if (_regrowRoutine != null) StopCoroutine(_regrowRoutine);
+            _regrowRoutine = StartCoroutine(RegrowRoutine(remainingTicks));
+        }
+
+        private IEnumerator RegrowRoutine(long remainingTicks)
+        {
+            yield return new WaitForSeconds((float)TimeSpan.FromTicks(remainingTicks).TotalSeconds);
             IsRipe = true;
+            _regrowsAtUtcTicks = 0L;
+            _regrowRoutine = null;
             SetVisuals(true);
         }
 

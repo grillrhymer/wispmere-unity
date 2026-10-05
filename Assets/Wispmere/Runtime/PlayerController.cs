@@ -1,15 +1,11 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace Wispmere
 {
     /// <summary>
-    /// Third-person walker driven by the WispmereInput asset
-    /// (WASD + arrows + gamepad stick; E / buttonSouth = interact).
-    /// Movement only — arrival autopilot and dialogue locking live in
-    /// GameManager. On-screen Stick (Input System) can drive the same
-    /// Move action for touch with no code changes.
+    /// Direct third-person movement using the WispmereInput asset.
+    /// Arrival walking is handled separately by GameManager.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(CharacterCustomizer))]
@@ -18,312 +14,220 @@ namespace Wispmere
         [Header("Wiring")]
         public InputActionAsset inputAsset;
 
-        [Header("Tuning (matches web: 230 px/s, 86 px radius)")]
+        [Header("Tuning")]
         public float moveSpeed = 4.6f;
         public float turnSpeed = 12f;
-        public float interactRadius = 1.7f;
 
         public bool InputLocked { get; set; }
         public Vector3 MoveDir { get; private set; }
+        public InputAction CameraLookAction { get { return _cameraLook; } }
 
         private CharacterController _body;
         private CharacterCustomizer _look;
         private InputAction _move;
+        private InputAction _cameraLook;
         private InputAction _interact;
         private InputAction _pause;
-        private object _clickTarget;
-        private Vector3 _clickDestination;
-        private bool _hasClickDestination;
-        private float _feedbackUntil;
-        private string _mouseFeedback;
-        private readonly RaycastHit[] _mouseHits = new RaycastHit[32];
-
-        public string HoveredTargetLabel { get; private set; }
-        public bool HasPendingClickMovement { get { return _hasClickDestination || _clickTarget != null; } }
-        public string ClickTargetLabel
-        {
-            get
-            {
-                if (_clickTarget is ResourceNode) return ((ResourceNode)_clickTarget).label;
-                if (_clickTarget is Interactable) return ((Interactable)_clickTarget).label;
-                return "";
-            }
-        }
-        public string MouseFeedback
-        {
-            get { return Time.unscaledTime < _feedbackUntil ? _mouseFeedback : ""; }
-        }
 
         private void Awake()
         {
             _body = GetComponent<CharacterController>();
             _look = GetComponent<CharacterCustomizer>();
-            var map = inputAsset.FindActionMap("Player");
+            if (inputAsset == null)
+            {
+                Debug.LogError("[Wispmere] PlayerController needs the WispmereInput asset.", this);
+                enabled = false;
+                return;
+            }
+
+            InputActionMap map = inputAsset.FindActionMap("Player");
+            if (map == null)
+            {
+                Debug.LogError("[Wispmere] WispmereInput is missing its Player action map.", this);
+                enabled = false;
+                return;
+            }
+
             _move = map.FindAction("Move");
+            _cameraLook = map.FindAction("Look");
             _interact = map.FindAction("Interact");
             _pause = map.FindAction("Pause");
-            _interact.performed += _ => GameManager.Instance.TryInteract();
-            _pause.performed += _ => GameManager.Instance.TogglePause();
+            if (_move == null || _cameraLook == null || _interact == null || _pause == null)
+            {
+                Debug.LogError("[Wispmere] WispmereInput is missing a required player action.", this);
+                enabled = false;
+                return;
+            }
+            _interact.performed += OnInteract;
+            _pause.performed += OnPause;
         }
 
         private void OnEnable()
         {
-            _move.Enable(); _interact.Enable(); _pause.Enable();
+            if (_move == null) return;
+            _move.Enable();
+            _cameraLook.Enable();
+            _interact.Enable();
+            _pause.Enable();
         }
 
         private void OnDisable()
         {
-            _move.Disable(); _interact.Disable(); _pause.Disable();
+            if (_move == null) return;
+            _move.Disable();
+            _cameraLook.Disable();
+            _interact.Disable();
+            _pause.Disable();
+        }
+
+        private void OnDestroy()
+        {
+            if (_interact != null) _interact.performed -= OnInteract;
+            if (_pause != null) _pause.performed -= OnPause;
         }
 
         private void Update()
         {
-            Mouse mouse = Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            GameManager manager = GameManager.Instance;
+            Keyboard keyboard = Keyboard.current;
+            Gamepad gamepad = Gamepad.current;
+
+            bool inventoryPressed = gamepad != null && gamepad.buttonWest.wasPressedThisFrame;
+            inventoryPressed |= keyboard != null
+                && (keyboard.iKey.wasPressedThisFrame || keyboard.tabKey.wasPressedThisFrame);
+            if (manager != null && inventoryPressed && manager.hud != null)
             {
-                Camera camera = Camera.main;
-                if (camera != null)
-                    TryHandleWorldClick(camera.ScreenPointToRay(mouse.position.ReadValue()),
-                        EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
+                manager.hud.ToggleInventory();
             }
-            UpdateHover(mouse);
+
+            bool cancelPressed = gamepad != null && gamepad.buttonEast.wasPressedThisFrame;
+            if (manager != null && manager.IsPlacementActive)
+            {
+                if (cancelPressed)
+                {
+                    manager.HandleCancelInput();
+                    MoveDir = Vector3.zero;
+                    _body.SimpleMove(Vector3.zero);
+                    return;
+                }
+                Vector2 placementMove = _move.ReadValue<Vector2>();
+                bool confirm = (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
+                    || (keyboard != null && keyboard.enterKey.wasPressedThisFrame);
+                float rotate = 0f;
+                if (gamepad != null)
+                    rotate += (gamepad.rightShoulder.isPressed ? 1f : 0f)
+                        - (gamepad.leftShoulder.isPressed ? 1f : 0f);
+                if (keyboard != null)
+                    rotate += (keyboard.eKey.isPressed ? 1f : 0f)
+                        - (keyboard.qKey.isPressed ? 1f : 0f);
+                manager.UpdatePlacement(placementMove, confirm, cancelPressed, rotate);
+                MoveDir = Vector3.zero;
+                _body.SimpleMove(Vector3.zero);
+                return;
+            }
+            if (cancelPressed && manager != null)
+            {
+                bool wasInputLocked = InputLocked;
+                manager.HandleCancelInput();
+                if (wasInputLocked)
+                {
+                    MoveDir = Vector3.zero;
+                    _body.SimpleMove(Vector3.zero);
+                    return;
+                }
+            }
 
             Vector2 input = InputLocked ? Vector2.zero : _move.ReadValue<Vector2>();
             Transform view = Camera.main != null ? Camera.main.transform : null;
-            Vector3 forward = view == null ? Vector3.back : Vector3.ProjectOnPlane(view.forward, Vector3.up).normalized;
-            Vector3 right = view == null ? Vector3.right : Vector3.ProjectOnPlane(view.right, Vector3.up).normalized;
-            Vector3 dir = right * input.x + forward * input.y;
-            if (dir.sqrMagnitude > 1f) dir.Normalize();
-            if (InputLocked)
-            {
-                _clickTarget = null;
-                _hasClickDestination = false;
-                dir = Vector3.zero;
-            }
-            else if (dir.sqrMagnitude > 0.01f)
-            {
-                _clickTarget = null;
-                _hasClickDestination = false;
-            }
-            else
-            {
-                dir = GetClickMoveDirection();
-            }
-            MoveDir = dir;
+            Vector3 forward = view == null
+                ? Vector3.back
+                : Vector3.ProjectOnPlane(view.forward, Vector3.up).normalized;
+            Vector3 right = view == null
+                ? Vector3.right
+                : Vector3.ProjectOnPlane(view.right, Vector3.up).normalized;
+            Vector3 direction = right * input.x + forward * input.y;
+            if (direction.sqrMagnitude > 1f) direction.Normalize();
+            MoveDir = direction;
+            _body.SimpleMove(direction * moveSpeed);
 
-            _body.SimpleMove(dir * moveSpeed);
-
-            if (dir.sqrMagnitude > 0.01f)
+            if (direction.sqrMagnitude > 0.01f)
             {
-                Quaternion face = Quaternion.LookRotation(dir);
-                transform.rotation = Quaternion.Slerp(transform.rotation, face, turnSpeed * Time.deltaTime);
+                Quaternion facing = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Slerp(transform.rotation, facing,
+                    turnSpeed * Time.deltaTime);
             }
         }
 
-        public bool TryHandleWorldClick(Ray ray, bool pointerOverUI)
+        private void OnInteract(InputAction.CallbackContext context)
         {
-            if (pointerOverUI || InputLocked) return false;
-
-            int hitCount = GetSortedMouseHits(ray);
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit hit = _mouseHits[i];
-                if (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform))
-                    continue;
-
-                ResourceNode node = hit.collider.GetComponentInParent<ResourceNode>();
-                if (node != null)
-                {
-                    if (!node.IsRipe)
-                    {
-                        SetMouseFeedback(node.label + " is regrowing.");
-                        return true;
-                    }
-                    _clickTarget = node;
-                    _hasClickDestination = false;
-                    SetMouseFeedback("Moving to " + node.label + ".");
-                    return true;
-                }
-
-                Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
-                if (interactable != null)
-                {
-                    _clickTarget = interactable;
-                    _hasClickDestination = false;
-                    SetMouseFeedback("Moving to " + interactable.label + ".");
-                    return true;
-                }
-
-                if (hit.collider.gameObject.name == "Ground")
-                {
-                    _clickTarget = null;
-                    _clickDestination = hit.point;
-                    _hasClickDestination = true;
-                    SetMouseFeedback("Moving.");
-                    return true;
-                }
-
-                SetMouseFeedback("Nothing to interact with here.");
-                return false;
-            }
-
-            SetMouseFeedback("No walkable ground there.");
-            return false;
+            if (GameManager.Instance != null) GameManager.Instance.TryInteract();
         }
 
-        private Vector3 GetClickMoveDirection()
+        private void OnPause(InputAction.CallbackContext context)
         {
-            if (_clickTarget is ResourceNode)
-            {
-                var node = (ResourceNode)_clickTarget;
-                if (!node || !node.IsRipe)
-                {
-                    _clickTarget = null;
-                    return Vector3.zero;
-                }
-
-                Vector3 toNode = node.transform.position - transform.position;
-                toNode.y = 0f;
-                if (toNode.magnitude <= interactRadius)
-                {
-                    _clickTarget = null;
-                    node.Interact();
-                    return Vector3.zero;
-                }
-                return toNode.normalized;
-            }
-
-            if (_clickTarget is Interactable)
-            {
-                var interactable = (Interactable)_clickTarget;
-                if (!interactable)
-                {
-                    _clickTarget = null;
-                    return Vector3.zero;
-                }
-
-                Vector3 toInteractable = interactable.transform.position - transform.position;
-                toInteractable.y = 0f;
-                if (toInteractable.magnitude <= interactable.radius)
-                {
-                    _clickTarget = null;
-                    interactable.Interact();
-                    return Vector3.zero;
-                }
-                return toInteractable.normalized;
-            }
-
-            if (_hasClickDestination)
-            {
-                Vector3 toDestination = _clickDestination - transform.position;
-                toDestination.y = 0f;
-                if (toDestination.magnitude <= 0.35f)
-                {
-                    _hasClickDestination = false;
-                    return Vector3.zero;
-                }
-                return toDestination.normalized;
-            }
-
-            return Vector3.zero;
+            if (GameManager.Instance != null) GameManager.Instance.TogglePause();
         }
 
-        private void UpdateHover(Mouse mouse)
-        {
-            HoveredTargetLabel = "";
-            if (mouse == null || InputLocked
-                || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()))
-                return;
-
-            Camera camera = Camera.main;
-            if (camera == null) return;
-            int hitCount = GetSortedMouseHits(camera.ScreenPointToRay(mouse.position.ReadValue()));
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit hit = _mouseHits[i];
-                if (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform))
-                    continue;
-                ResourceNode node = hit.collider.GetComponentInParent<ResourceNode>();
-                if (node != null)
-                {
-                    HoveredTargetLabel = node.IsRipe ? "Gather " + node.label : node.label + " (regrowing)";
-                    return;
-                }
-                Interactable interactable = hit.collider.GetComponentInParent<Interactable>();
-                if (interactable != null)
-                {
-                    HoveredTargetLabel = interactable.label;
-                    return;
-                }
-                return;
-            }
-        }
-
-        private int GetSortedMouseHits(Ray ray)
-        {
-            int count = Physics.RaycastNonAlloc(ray, _mouseHits, 200f,
-                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
-            for (int i = 1; i < count; i++)
-            {
-                RaycastHit hit = _mouseHits[i];
-                int j = i - 1;
-                while (j >= 0 && _mouseHits[j].distance > hit.distance)
-                {
-                    _mouseHits[j + 1] = _mouseHits[j];
-                    j--;
-                }
-                _mouseHits[j + 1] = hit;
-            }
-            return count;
-        }
-
-        private void SetMouseFeedback(string message)
-        {
-            _mouseFeedback = message;
-            _feedbackUntil = Time.unscaledTime + 2f;
-        }
-
-        /// <summary>Nearest interactable or ripe node in range, like the web build.</summary>
+        /// <summary>Nearest interactable or ripe resource node in proximity.</summary>
         public object FindTarget()
         {
             object best = null;
-            float bestD = float.MaxValue;
+            float bestDistance = float.MaxValue;
+            float bestFacing = float.MinValue;
+            Vector3 playerPosition = transform.position;
+            Vector3 facing = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
 
-            foreach (var it in Interactable.All)
+            foreach (Interactable interactable in Interactable.All)
             {
-                float d = Vector3.Distance(transform.position, it.transform.position);
-                if (d < it.radius && d < bestD)
-                {
-                    best = it; bestD = d;
-                }
+                if (interactable == null) continue;
+                ConsiderTarget(interactable, interactable.transform.position,
+                    interactable.radius, ref best, ref bestDistance, ref bestFacing, facing,
+                    playerPosition);
             }
-            foreach (var node in ResourceNode.All)
+            foreach (ResourceNode node in ResourceNode.All)
             {
-                if (!node.IsRipe) continue;
-                float d = Vector3.Distance(transform.position, node.transform.position);
-                if (d < interactRadius && d < bestD)
-                {
-                    best = node; bestD = d;
-                }
+                if (node == null || !node.IsRipe) continue;
+                ConsiderTarget(node, node.transform.position, node.interactionRadius,
+                    ref best, ref bestDistance, ref bestFacing, facing, playerPosition);
             }
             return best;
         }
 
-        public void ApplyAppearance(Appearance a)
+        private static void ConsiderTarget(object candidate, Vector3 position, float radius,
+            ref object best, ref float bestDistance, ref float bestFacing, Vector3 facing,
+            Vector3 playerPosition)
         {
-            _look.Apply(a);
+            Vector3 toTarget = position - playerPosition;
+            toTarget.y = 0f;
+            float distance = toTarget.magnitude;
+            if (distance >= radius) return;
+
+            float facingScore = distance > 0.001f
+                ? Vector3.Dot(facing, toTarget / distance)
+                : 1f;
+            bool closer = distance < bestDistance - 0.25f;
+            bool nearTie = Mathf.Abs(distance - bestDistance) <= 0.25f;
+            if (!closer && !(nearTie && facingScore > bestFacing)) return;
+
+            best = candidate;
+            bestDistance = distance;
+            bestFacing = facingScore;
         }
 
-        /// <summary>Arrival autopilot: walk straight toward the square.</summary>
+        public void ApplyAppearance(Appearance appearance)
+        {
+            _look.Apply(appearance);
+        }
+
+        /// <summary>Arrival sequence movement toward the town square.</summary>
         public bool AutoWalkToward(Vector3 goal, float speedScale = 0.75f)
         {
             Vector3 to = goal - transform.position;
             to.y = 0f;
             if (to.magnitude < 0.4f) return true;
             _body.SimpleMove(to.normalized * (moveSpeed * speedScale));
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(to.normalized), turnSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation,
+                Quaternion.LookRotation(to.normalized), turnSpeed * Time.deltaTime);
             return false;
         }
     }

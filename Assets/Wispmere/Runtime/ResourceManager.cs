@@ -12,8 +12,8 @@ namespace Wispmere
     }
 
     /// <summary>
-    /// Resource wallet and owned gathering tools. Resource counts remain the
-    /// single source of truth for the HUD, inventory, and crafting.
+    /// Resource wallet, crafted inventory items, and owned gathering tools.
+    /// Counts remain the single source of truth for the HUD and crafting.
     /// </summary>
     public class ResourceManager : MonoBehaviour
     {
@@ -24,7 +24,9 @@ namespace Wispmere
 
         private readonly Dictionary<string, int> _counts = new Dictionary<string, int>
         {
-            { "wood", 0 }, { "stone", 0 }, { "fiber", 0 }, { "ore", 0 },
+            { "wood", 0 }, { "stone", 0 }, { "fiber", 0 }, { "ore", 0 }, { "hardwood", 0 },
+            { "workbench", 0 }, { "campfire", 0 }, { "storage_chest", 0 }, { "fence", 0 },
+            { "metal_axe", 0 }, { "metal_pickaxe", 0 }, { "tent", 0 },
         };
         private readonly HashSet<GatherTool> _ownedTools = new HashSet<GatherTool>();
 
@@ -59,6 +61,14 @@ namespace Wispmere
             _counts["stone"] = 0;
             _counts["fiber"] = 0;
             _counts["ore"] = 0;
+            _counts["hardwood"] = 0;
+            _counts["workbench"] = 0;
+            _counts["campfire"] = 0;
+            _counts["storage_chest"] = 0;
+            _counts["fence"] = 0;
+            _counts["metal_axe"] = 0;
+            _counts["metal_pickaxe"] = 0;
+            _counts["tent"] = 0;
             foreach (var kv in saved) _counts[kv.Key] = kv.Value;
             foreach (var kv in _counts)
                 if (OnChanged != null) OnChanged(kv.Key, kv.Value);
@@ -72,7 +82,17 @@ namespace Wispmere
         public bool CanCraftTool(GatherTool tool)
         {
             return tool != GatherTool.None && !HasTool(tool)
-                && Get("wood") >= 1 && Get("stone") >= 1;
+                && CanAfford(GetToolRecipeCosts(tool));
+        }
+
+        public Dictionary<string, int> GetToolRecipeCosts(GatherTool tool)
+        {
+            if (tool == GatherTool.None)
+            {
+                Debug.LogError("[Wispmere] Cannot get recipe costs for an unspecified tool.", this);
+                return new Dictionary<string, int>();
+            }
+            return new Dictionary<string, int> { { "wood", 1 }, { "stone", 1 } };
         }
 
         public bool TryCraftTool(GatherTool tool)
@@ -84,15 +104,67 @@ namespace Wispmere
             }
             if (!CanCraftTool(tool)) return false;
 
-            _counts["wood"]--;
-            _counts["stone"]--;
+            Dictionary<string, int> costs = GetToolRecipeCosts(tool);
+            foreach (var cost in costs)
+                _counts[cost.Key] -= cost.Value;
             _ownedTools.Add(tool);
             if (OnChanged != null)
-            {
-                OnChanged("wood", _counts["wood"]);
-                OnChanged("stone", _counts["stone"]);
-            }
+                foreach (var cost in costs)
+                    OnChanged(cost.Key, _counts[cost.Key]);
             if (OnToolsChanged != null) OnToolsChanged();
+            return true;
+        }
+
+        public bool CanAfford(Dictionary<string, int> costs)
+        {
+            if (costs == null)
+            {
+                Debug.LogError("[Wispmere] Cannot check affordability for null recipe costs.", this);
+                return false;
+            }
+
+            foreach (var cost in costs)
+            {
+                if (string.IsNullOrEmpty(cost.Key) || cost.Value <= 0)
+                {
+                    Debug.LogError("[Wispmere] Recipe costs require item names and positive quantities.", this);
+                    return false;
+                }
+                if (Get(cost.Key) < cost.Value) return false;
+            }
+            return true;
+        }
+
+        public bool TryCraftItem(string item, Dictionary<string, int> costs)
+        {
+            if (string.IsNullOrEmpty(item) || costs == null || costs.Count == 0)
+            {
+                Debug.LogError("[Wispmere] Crafted items require an item id and non-empty costs.", this);
+                return false;
+            }
+            if (!CanAfford(costs)) return false;
+
+            foreach (var cost in costs)
+            {
+                _counts[cost.Key] -= cost.Value;
+                if (OnChanged != null) OnChanged(cost.Key, _counts[cost.Key]);
+            }
+
+            Add(item, 1);
+            return true;
+        }
+
+        public bool TryConsumeItem(string item, int amount)
+        {
+            if (string.IsNullOrEmpty(item) || amount <= 0)
+            {
+                Debug.LogError("[Wispmere] Item consumption requires an item id and positive quantity.", this);
+                return false;
+            }
+            if (Get(item) < amount) return false;
+
+            _counts[item] -= amount;
+            if (OnChanged != null) OnChanged(item, _counts[item]);
             return true;
         }
 

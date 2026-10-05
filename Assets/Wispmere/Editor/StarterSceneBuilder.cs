@@ -18,6 +18,14 @@ namespace Wispmere.Editor
         [MenuItem("Wispmere/Create/Rebuild Starter Scene")]
         public static void Build()
         {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (HasManualPoiVisuals(activeScene))
+            {
+                Debug.LogWarning("[Wispmere] Starter scene rebuild was skipped because POI anchors "
+                    + "contain manually authored visuals. Rebuilding would replace the active scene.");
+                return;
+            }
+
             var layout = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Wispmere/Runtime/WorldLayout.json");
             var input = AssetDatabase.LoadAssetAtPath<UnityEngine.InputSystem.InputActionAsset>(
                 "Assets/Wispmere/Runtime/WispmereInput.inputactions");
@@ -59,13 +67,19 @@ namespace Wispmere.Editor
             cameraFollow.focusHeight = 0.9f;
             cameraFollow.followSpeed = 4.5f;
             cameraFollow.usePolishedControls = true;
+            cameraFollow.thirdPersonCameraEnabled = true;
             cameraFollow.minimumZoom = 20f;
             cameraFollow.maximumZoom = 36f;
             cameraFollow.zoomDistance = 27.6f;
             cameraFollow.pitch = 38f;
             cameraFollow.yaw = 65f;
+            cameraFollow.thirdPersonDistance = 9.5f;
+            cameraFollow.thirdPersonMinimumDistance = 7f;
+            cameraFollow.thirdPersonMaximumDistance = 16f;
+            cameraFollow.thirdPersonPitch = 23f;
+            cameraFollow.thirdPersonFieldOfView = 60f;
             var presentationCamera = cameraObject.GetComponent<Camera>();
-            presentationCamera.fieldOfView = 48f;
+            presentationCamera.fieldOfView = 60f;
             presentationCamera.nearClipPlane = 0.15f;
             presentationCamera.farClipPlane = 100f;
             presentationCamera.allowMSAA = true;
@@ -106,10 +120,10 @@ namespace Wispmere.Editor
             hudRootRect.offsetMax = Vector2.zero;
             var resourcesPlate = HudPlate("ResourcesFrame", hudRoot.transform,
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -22f),
-                new Vector2(455f, 62f), new Color(0.16f, 0.2f, 0.17f, 0.9f));
+                new Vector2(700f, 62f), new Color(0.16f, 0.2f, 0.17f, 0.9f));
             var resourcesText = Text("ResourcesText", resourcesPlate.transform,
                 "WOOD: 0    STONE: 0    FIBER: 0", 19, TextAnchor.MiddleLeft,
-                new Rect(16f, 0f, 423f, 52f));
+                new Rect(16f, 0f, 668f, 52f));
             StyleHudText(resourcesText, new Color(0.96f, 0.88f, 0.67f));
             var objectivePlate = HudPlate("ObjectiveFrame", hudRoot.transform,
                 new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -22f),
@@ -272,6 +286,24 @@ namespace Wispmere.Editor
             Debug.Log("[Wispmere] Starter scene created and added to Build Settings: " + ScenePath);
         }
 
+        private static bool HasManualPoiVisuals(Scene scene)
+        {
+            foreach (GameObject sceneRoot in scene.GetRootGameObjects())
+            {
+                TownBuilder town = sceneRoot.GetComponentInChildren<TownBuilder>(true);
+                if (town == null) continue;
+                Transform townRoot = town.transform.Find("TownRoot");
+                if (townRoot == null) continue;
+                string[] poiIds = { "sign", "arch", "stall" };
+                foreach (string id in poiIds)
+                {
+                    Transform anchor = townRoot.Find("POI_" + id);
+                    if (anchor != null && anchor.childCount > 0) return true;
+                }
+            }
+            return false;
+        }
+
         public static void BuildBatchMode()
         {
             if (!Application.isBatchMode)
@@ -424,7 +456,7 @@ namespace Wispmere.Editor
         [MenuItem("Wispmere/Integrate/Add Inventory HUD")]
         public static void AddInventoryHudToOpenScene()
         {
-            var hud = UnityEngine.Object.FindObjectOfType<GameHUD>();
+            var hud = UnityEngine.Object.FindAnyObjectByType<GameHUD>();
             if (hud == null)
             {
                 Debug.LogError("[Wispmere] Cannot add the inventory HUD because the open scene has no GameHUD.");
@@ -515,7 +547,7 @@ namespace Wispmere.Editor
             craftingHeading.fontStyle = FontStyle.Bold;
             craftingHeading.color = new Color(0.34f, 0.23f, 0.13f, 1f);
 
-            string[] resourceKinds = { "Wood", "Stone", "Fiber", "Ore" };
+            string[] resourceKinds = { "Wood", "Stone", "Fiber", "Ore", "Hardwood" };
             Text[] quantities = new Text[resourceKinds.Length];
             for (int i = 0; i < resourceKinds.Length; i++)
             {

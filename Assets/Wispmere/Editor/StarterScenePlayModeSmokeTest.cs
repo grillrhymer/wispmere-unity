@@ -140,6 +140,16 @@ namespace Wispmere.Editor
         private static void CheckPlaceholderShapes(TownBuilder town)
         {
             Transform root = town.transform.Find("TownRoot");
+            Transform hardwood = root.Find("Node_hardwood1");
+            ResourceNode hardwoodNode = hardwood != null
+                ? hardwood.GetComponent<ResourceNode>() : null;
+            Require(hardwood != null && hardwood.Find("HardwoodTrunk") != null
+                && hardwood.Find("CutEnd1") != null && hardwoodNode != null
+                && hardwoodNode.kind == "hardwood" && hardwoodNode.amount == 2
+                && hardwoodNode.requiredTool == GatherTool.Axe
+                && Vector3.Distance(hardwood.position, WorldLayout.ToUnity(800f, 1060f)) > 10f,
+                "The distant fallen Hardwood log must be visibly built and gated behind an Axe.");
+
             var tree = root.Find("tree1");
             Require(tree != null && tree.Find("Trunk") != null
                 && tree.Find("Trunk").GetComponent<CapsuleCollider>() != null

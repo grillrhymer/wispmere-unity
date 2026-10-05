@@ -187,6 +187,99 @@ MonoBehaviour:
   - key: decoration/boat
     prefab: {fileID: 5777240715420095136, guid: 7c99531c61bfcb649a63fecaa465073c, type: 3}
     scale: 0.65
+  - key: decoration/windmill
+    prefab: {fileID: 1255350945839008, guid: 28b03608ec7315044906c829c8f86f8b, type: 3}
+    scale: 0.18
+  - key: decoration/cart
+    prefab: {fileID: 1482055764322774, guid: 02c9d373237917847b636baad496fa95, type: 3}
+    scale: 0.4
+  - key: decoration/work-barrel
+    prefab: {fileID: 1561497455732876, guid: 3c3b0773e182ad847a706394ac5af117, type: 3}
+    scale: 0.65
+  - key: decoration/work-basket
+    prefab: {fileID: 1704846455854378, guid: 11606f16466dd6243ad5d3f80932bb0a, type: 3}
+    scale: 0.65
+  - key: decoration/meadow-grass
+    prefab: {fileID: 8812584711120714047, guid: 91d8d8ad5c541394c80f7cc7e1fd253b, type: 3}
+    scale: 0.28
+  - key: decoration/meadow-fern
+    prefab: {fileID: 6205237258745050536, guid: 0c7542f3d05c9a4468ea43aec782fdac, type: 3}
+    scale: 0.3
+  - key: decoration/meadow-flower
+    prefab: {fileID: 2153456347341862418, guid: 7358ad30e7ab6be4b8cf21062d019675, type: 3}
+    scale: 0.3
+  - key: fantasy/tree-birch-1
+    prefab: {fileID: 1216688828669844, guid: 47356d574ebc3a545bfaef26eb02a2ea, type: 3}
+    scale: 0.22
+  - key: fantasy/tree-birch-2
+    prefab: {fileID: 1951202686989992, guid: 5219ccfa3b129f645bfb105ac244e8f5, type: 3}
+    scale: 0.22
+  - key: fantasy/tree-oak-2
+    prefab: {fileID: 1795183421160198, guid: 97c810fbbe2577a45863f4be151b599b, type: 3}
+    scale: 0.22
+  - key: fantasy/tree-deciduous-3
+    prefab: {fileID: 1501239254383666, guid: f68e891b21d164a4bbe322e20e50633b, type: 3}
+    scale: 0.22
+  - key: fantasy/tree-willow-1
+    prefab: {fileID: 1274954305527900, guid: 76ca9846e495a3a42a47f16f51d18fb0, type: 3}
+    scale: 0.25
+  - key: fantasy/tree-pine-2
+    prefab: {fileID: 1589722417147216, guid: f86a19e11c6b9734ba52832ec45ee16f, type: 3}
+    scale: 0.24
+  - key: fantasy/grass-1
+    prefab: {fileID: 8812584711120714047, guid: 91d8d8ad5c541394c80f7cc7e1fd253b, type: 3}
+    scale: 0.52
+  - key: fantasy/grass-2
+    prefab: {fileID: 7045990119674233780, guid: 8e20bb73d6781f047a846b8e13553d15, type: 3}
+    scale: 0.52
+  - key: fantasy/grass-3
+    prefab: {fileID: 2022498996388788194, guid: ea784f90c6a294d4c943e54ce9184fb2, type: 3}
+    scale: 0.52
+  - key: fantasy/grass-4
+    prefab: {fileID: 5982839853698224172, guid: c00784b589bee494b831054cc54dbf7b, type: 3}
+    scale: 0.52
+  - key: fantasy/fern-1
+    prefab: {fileID: 6205237258745050536, guid: 0c7542f3d05c9a4468ea43aec782fdac, type: 3}
+    scale: 0.45
+  - key: fantasy/fern-2
+    prefab: {fileID: 4785413492924531132, guid: cfe991abfe1d8a34e90a8b8d50f9a61c, type: 3}
+    scale: 0.45
+  - key: fantasy/fern-3
+    prefab: {fileID: 1212246297705233334, guid: 30a878c1d1da97d42a456d77f72cca61, type: 3}
+    scale: 0.45
+  - key: fantasy/flower-2
+    prefab: {fileID: 1223156714505594708, guid: 91367e40ea3f3ad4a90bbf1e7a32d9d1, type: 3}
+    scale: 0.4
+  - key: fantasy/flower-3
+    prefab: {fileID: 1973268181744308885, guid: ad737f18422ef564aa21b23aab39d274, type: 3}
+    scale: 0.4
+  - key: fantasy/flower-5
+    prefab: {fileID: 1179445593872686852, guid: cd03a41894dab5e49abe8481b9a4a630, type: 3}
+    scale: 0.4
+  - key: fantasy/flower-6
+    prefab: {fileID: 7537165645186567766, guid: 0b6bd30c5d303194db3c59feae69ab39, type: 3}
+    scale: 0.4
+  - key: fantasy/flower-8
+    prefab: {fileID: 1034637672061153995, guid: ea732816104f9474d83cbe0dbb7c4258, type: 3}
+    scale: 0.4
+  - key: fantasy/plant-2
+    prefab: {fileID: 1202788212063637620, guid: eb2e3b1d2f96f724e97c8d931ec0d6fc, type: 3}
+    scale: 0.36
+  - key: fantasy/plant-4
+    prefab: {fileID: 3889244126477486128, guid: 5bc68b98108d78a418afb40cc75e2a81, type: 3}
+    scale: 0.36
+  - key: fantasy/bush-1
+    prefab: {fileID: 3321783486682416297, guid: e6ee60cd48ca7fa478e3065e30330864, type: 3}
+    scale: 0.36
+  - key: fantasy/rock-1
+    prefab: {fileID: 1562119382739742, guid: c07f24e35f07ce74ba43afa35d48adf7, type: 3}
+    scale: 0.7
+  - key: fantasy/rock-2
+    prefab: {fileID: 1220206043906976, guid: 86263e8355f96ba4ab9fdf4e96c2090f, type: 3}
+    scale: 0.02
+  - key: fantasy/rock-3
+    prefab: {fileID: 1128399435428950, guid: 94a3318e328358d4095f16b054b14180, type: 3}
+    scale: 0.7
   materialReplacements:
   - source: {fileID: 2100000, guid: 11783c05facd0c149ad53d328816c467, type: 2}
     replacement: {fileID: 2100000, guid: 5b8933e9d5afea0498fbcb0a65de3d22, type: 2}

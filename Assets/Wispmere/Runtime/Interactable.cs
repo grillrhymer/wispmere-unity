@@ -17,12 +17,18 @@ namespace Wispmere
         [TextArea] public string text = "…";
         public float radius = 1.6f;
         public bool isRestorationTarget;
+        public bool isWorkbench;
 
         private void OnEnable() { All.Add(this); }
         private void OnDisable() { All.Remove(this); }
 
         public void Interact()
         {
+            if (isWorkbench)
+            {
+                GameManager.Instance.OpenWorkbench(transform);
+                return;
+            }
             if (isRestorationTarget)
                 GameManager.Instance.DiscoverRestorationTarget(this);
             GameManager.Instance.Dialogue.Show(label, text);

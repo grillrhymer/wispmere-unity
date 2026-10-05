@@ -10,7 +10,7 @@ namespace Wispmere.Editor
         [MenuItem("Wispmere/Build Town From Json")]
         public static void BuildTown()
         {
-            var builder = Object.FindObjectOfType<TownBuilder>();
+            var builder = Object.FindAnyObjectByType<TownBuilder>();
             if (builder == null)
             {
                 Debug.LogError("[Wispmere] No TownBuilder in the scene. See SCENE_SETUP.md step 1.");

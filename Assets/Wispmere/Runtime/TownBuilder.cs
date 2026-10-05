@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Wispmere
@@ -41,6 +42,7 @@ namespace Wispmere
                 Debug.LogError("[Wispmere] TownBuilder needs its Layout Json assigned.");
                 return;
             }
+            Dictionary<string, Transform> retainedPoiAnchors = DetachPoiAnchors();
             Clear();
             var data = Layout;
             var root = new GameObject(RootName).transform;
@@ -51,10 +53,39 @@ namespace Wispmere
             foreach (var b in data.buildings) BuildBuilding(root, b);
             foreach (var p in data.props) BuildProp(root, p);
             foreach (var g in data.gardens) SpawnKeyed(root, "garden", WorldLayout.ToUnity(g.x, g.y), Vector3.one, FallbackGarden);
-            foreach (var it in data.interactables) BuildInteractable(root, it);
+            foreach (var it in data.interactables)
+            {
+                Transform retainedAnchor;
+                if (retainedPoiAnchors.TryGetValue(it.id, out retainedAnchor)
+                    && retainedAnchor != null)
+                {
+                    retainedAnchor.SetParent(root, true);
+                }
+                else
+                {
+                    BuildInteractable(root, it);
+                }
+            }
             foreach (var n in data.nodes) BuildNode(root, n);
             BuildSquare(root, data);
             BuildDecorations(root, data);
+        }
+
+        private Dictionary<string, Transform> DetachPoiAnchors()
+        {
+            Dictionary<string, Transform> retained = new Dictionary<string, Transform>();
+            Transform root = transform.Find(RootName);
+            if (root == null) return retained;
+
+            string[] poiIds = { "sign", "arch", "stall" };
+            foreach (string id in poiIds)
+            {
+                Transform anchor = root.Find("POI_" + id);
+                if (anchor == null) continue;
+                anchor.SetParent(transform, true);
+                retained.Add(id, anchor);
+            }
+            return retained;
         }
 
         public void Clear()
@@ -209,24 +240,65 @@ namespace Wispmere
 
         private void BuildNode(Transform root, WorldLayout.NodeEntry n)
         {
+            if (n.kind == "hardwood")
+            {
+                var hardwoodRoot = new GameObject("Node_" + n.id).transform;
+                hardwoodRoot.SetParent(root, false);
+                hardwoodRoot.position = WorldLayout.ToUnity(n.x, n.y);
+                BuildHardwoodLog(hardwoodRoot);
+                AddNodeComponent(hardwoodRoot, n, 1.6f);
+                return;
+            }
+
             string visualKind = n.kind == "ore" ? "stone" : n.kind;
             var t = SpawnKeyed(root, "node/" + visualKind, WorldLayout.ToUnity(n.x, n.y),
                 Vector3.one, FallbackNode(visualKind));
             t.name = "Node_" + n.id;
-            var c = t.gameObject.AddComponent<ResourceNode>();
-            c.kind = n.kind;
-            c.label = n.label;
-            c.amount = n.amount > 0 ? n.amount : 1;
-            if (!string.IsNullOrEmpty(n.requiredTool)
-                && !System.Enum.TryParse(n.requiredTool, true, out c.requiredTool))
+            AddNodeComponent(t, n, 0.62f);
+        }
+
+        private static void AddNodeComponent(Transform t, WorldLayout.NodeEntry entry, float radius)
+        {
+            var node = t.gameObject.AddComponent<ResourceNode>();
+            node.kind = entry.kind;
+            node.label = entry.label;
+            node.amount = entry.amount > 0 ? entry.amount : 1;
+            if (!string.IsNullOrEmpty(entry.requiredTool)
+                && !System.Enum.TryParse(entry.requiredTool, true, out node.requiredTool))
             {
-                Debug.LogError("[Wispmere] Resource node " + n.id
-                    + " has an unknown required tool: " + n.requiredTool, t);
+                Debug.LogError("[Wispmere] Resource node " + entry.id
+                    + " has an unknown required tool: " + entry.requiredTool, t);
             }
             var clickCollider = t.gameObject.AddComponent<SphereCollider>();
             clickCollider.isTrigger = true;
-            clickCollider.radius = 0.62f;
-            clickCollider.center = Vector3.up * 0.35f;
+            clickCollider.radius = radius;
+            clickCollider.center = Vector3.up * (radius > 1f ? 0.55f : 0.35f);
+        }
+
+        private static void BuildHardwoodLog(Transform root)
+        {
+            Material bark = PlainMat(new Color(0.28f, 0.16f, 0.09f));
+            Material cutWood = PlainMat(new Color(0.78f, 0.57f, 0.31f));
+            Material heartwood = PlainMat(new Color(0.48f, 0.29f, 0.14f));
+            Quaternion logRotation = Quaternion.Euler(90f, 0f, 0f);
+            AddFallbackPart(root.gameObject, "HardwoodTrunk", PrimitiveType.Cylinder,
+                new Vector3(0f, 0.46f, 0f), new Vector3(0.92f, 4.8f, 0.92f),
+                bark, logRotation);
+
+            for (int end = -1; end <= 1; end += 2)
+            {
+                float z = end * 2.35f;
+                AddFallbackPart(root.gameObject, "CutEnd" + end, PrimitiveType.Cylinder,
+                    new Vector3(0f, 0.46f, z), new Vector3(0.86f, 0.1f, 0.86f),
+                    cutWood, logRotation);
+                AddFallbackPart(root.gameObject, "Heartwood" + end, PrimitiveType.Cylinder,
+                    new Vector3(0f, 0.46f, z + end * 0.055f), new Vector3(0.59f, 0.11f, 0.59f),
+                    heartwood, logRotation);
+            }
+
+            AddFallbackPart(root.gameObject, "BrokenBranch", PrimitiveType.Cylinder,
+                new Vector3(0.12f, 0.82f, -0.65f), new Vector3(0.2f, 0.9f, 0.2f),
+                bark, Quaternion.Euler(20f, 0f, -35f));
         }
 
         private void BuildSquare(Transform root, WorldLayout.LayoutData data)
@@ -288,7 +360,29 @@ namespace Wispmere
 
                 foreach (var collider in instance.GetComponentsInChildren<Collider>())
                     collider.enabled = false;
+
+                if (IsOversizedOreBoulder(decoration.id))
+                {
+                    ResourceNode node = instance.GetComponent<ResourceNode>();
+                    if (node == null) node = instance.AddComponent<ResourceNode>();
+                    node.kind = "ore";
+                    node.label = "Ore Boulder";
+                    node.amount = 2;
+                    node.regrowSeconds = 24f;
+                    node.interactionRadius = 5.5f;
+                    node.requiredTool = GatherTool.Pickaxe;
+                    node.persistenceId = decoration.id;
+                    foreach (var collider in instance.GetComponentsInChildren<Collider>())
+                        collider.enabled = true;
+                }
             }
+        }
+
+        private static bool IsOversizedOreBoulder(string id)
+        {
+            return id == "Rock_Meadow_Northeast"
+                || id == "Fantasy_Meadow_Rock_North"
+                || id == "Wilderness_Edge_Rock_East";
         }
 
         private static void AlignPrefabToGround(GameObject instance, Vector3 target)
